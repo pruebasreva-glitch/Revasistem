@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RVA Colombia SAS BIC — Sistema de Inventario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --green: #1a7a4a;
+    --green-light: #d4edda;
+    --green-dark: #0d5c36;
+    --amber: #e6820a;
+    --amber-light: #fff3cd;
+    --red: #c0392b;
+    --red-light: #fde8e8;
+    --blue: #1a5fa8;
+    --blue-light: #dbeafe;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f5;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #adb5bd;
+    --gray-600: #6c757d;
+    --gray-700: #495057;
+    --gray-800: #343a40;
+    --gray-900: #212529;
+    --font: 'Space Grotesk', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--gray-100); color: var(--gray-900); min-height: 100vh; display: flex; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px; min-height: 100vh; background: #0f2d1e;
+    display: flex; flex-direction: column; position: fixed; left: 0; top: 0; z-index: 100;
+    transition: width 0.3s;
+  }
+  .sidebar-brand {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .brand-logo {
+    width: 38px; height: 38px; background: var(--green); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;
+  }
+  .brand-name { font-size: 15px; font-weight: 700; color: #fff; }
+  .brand-sub { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+  .nav-section { padding: 12px 10px 4px; font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.35); font-weight: 600; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 16px; margin: 2px 8px; border-radius: var(--radius-sm);
+    color: rgba(255,255,255,0.65); font-size: 13.5px; cursor: pointer;
+    transition: all 0.15s; user-select: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .nav-item.active { background: var(--green); color: #fff; font-weight: 600; }
+  .nav-icon { font-size: 18px; opacity: 0.85; }
+  .sidebar-footer {
+    margin-top: auto; padding: 16px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .user-badge {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: var(--radius-sm);
+  }
+  .user-avatar {
+    width: 30px; height: 30px; border-radius: 50%; background: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff;
+  }
+  .user-name { font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; }
+  .user-role { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+  /* MAIN */
+  .main { margin-left: 240px; flex: 1; padding: 28px; min-height: 100vh; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .page-title { font-size: 22px; font-weight: 700; color: var(--gray-900); }
+  .page-sub { font-size: 13px; color: var(--gray-600); margin-top: 2px; }
+  .topbar-actions { display: flex; gap: 10px; }
+
+  /* VIEWS */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* LOGIN */
+  .login-screen {
+    position: fixed; inset: 0; background: #0a1f12;
+    display: flex; align-items: center; justify-content: center; z-index: 9999;
+  }
+  .login-card {
+    background: #fff; border-radius: 16px; padding: 40px 44px;
+    width: 400px; box-shadow: var(--shadow-lg);
+  }
+  .login-logo {
+    width: 54px; height: 54px; background: var(--green); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800; color: #fff; margin: 0 auto 16px;
+  }
+  .login-title { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: var(--gray-600); text-align: center; margin-bottom: 28px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-control {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-300);
+    border-radius: var(--radius-sm); font-family: var(--font); font-size: 14px;
+    transition: border-color 0.15s; outline: none; background: #fff;
+  }
+  .form-control:focus { border-color: var(--green); }
+  .form-select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-300); border-radius: var(--radius-sm); font-family: var(--font); font-size: 14px; appearance: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E") no-repeat right 12px center / 16px; cursor: pointer; outline: none; }
+  .form-select:focus { border-color: var(--green); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px;
+    border: none; border-radius: var(--radius-sm); font-family: var(--font);
+    font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    text-decoration: none; white-space: nowrap;
+  }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-secondary { background: var(--gray-200); color: var(--gray-800); }
+  .btn-secondary:hover { background: var(--gray-300); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #a93226; }
+  .btn-amber { background: var(--amber); color: #fff; }
+  .btn-amber:hover { background: #c47009; }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-blue:hover { background: #154d8a; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-lg { padding: 13px 24px; font-size: 15px; width: 100%; justify-content: center; }
+  .btn-icon { padding: 7px; }
+
+  /* CARDS & STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius); padding: 18px 20px;
+    border: 1px solid var(--gray-200); box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-600); font-weight: 600; margin-bottom: 6px; }
+  .stat-val { font-size: 28px; font-weight: 700; line-height: 1; }
+  .stat-change { font-size: 12px; margin-top: 4px; }
+  .text-green { color: var(--green); }
+  .text-red { color: var(--red); }
+  .text-amber { color: var(--amber); }
+  .text-blue { color: var(--blue); }
+
+  /* TABLE */
+  .card {
+    background: #fff; border-radius: var(--radius); border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px;
+  }
+  .card-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .card-title { font-size: 14px; font-weight: 700; }
+  .card-body { padding: 20px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { padding: 9px 14px; text-align: left; background: var(--gray-50); color: var(--gray-700); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--gray-200); }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--gray-50); }
+
+  /* BADGE */
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: var(--green-light); color: var(--green-dark); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-amber { background: var(--amber-light); color: #7c4a03; }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-gray { background: var(--gray-200); color: var(--gray-700); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center; z-index: 1000;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 14px; padding: 0;
+    width: 680px; max-width: 95vw; max-height: 90vh;
+    overflow-y: auto; box-shadow: var(--shadow-lg);
+  }
+  .modal-header {
+    padding: 20px 24px; border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: #fff; z-index: 10;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; gap: 10px; justify-content: flex-end; }
+  .close-btn { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--gray-500); line-height: 1; }
+  .close-btn:hover { color: var(--gray-900); }
+
+  /* GRID FORMS */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .col-span-2 { grid-column: span 2; }
+
+  /* SEARCH + FILTERS */
+  .filters-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .search-input {
+    padding: 9px 14px; border: 1.5px solid var(--gray-300);
+    border-radius: var(--radius-sm); font-family: var(--font); font-size: 13px;
+    outline: none; width: 240px; transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--green); }
+
+  /* ALERTS */
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 16px; }
+  .alert-warning { background: var(--amber-light); color: #7c4a03; border-left: 3px solid var(--amber); }
+  .alert-danger { background: var(--red-light); color: var(--red); border-left: 3px solid var(--red); }
+  .alert-success { background: var(--green-light); color: var(--green-dark); border-left: 3px solid var(--green); }
+
+  /* BARCODE / QR */
+  .label-preview {
+    background: #fff; border: 2px solid var(--gray-900); padding: 12px 16px;
+    width: 340px; font-family: var(--mono);
+  }
+  .label-company { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-align: center; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 8px; }
+  .label-row { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px; }
+  .label-bold { font-weight: 700; }
+  .label-barcode { display: flex; justify-content: center; margin: 10px 0 6px; }
+  .label-code-text { text-align: center; font-size: 10px; letter-spacing: 2px; }
+  .label-qr { display: flex; justify-content: center; margin-top: 10px; }
+
+  /* LOCATION MAP */
+  .warehouse-map {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 16px;
+  }
+  .rack-cell {
+    background: var(--gray-100); border: 1.5px solid var(--gray-300);
+    border-radius: var(--radius-sm); padding: 12px 8px; text-align: center;
+    cursor: pointer; transition: all 0.15s; min-height: 70px;
+  }
+  .rack-cell:hover { border-color: var(--green); background: var(--green-light); }
+  .rack-cell.occupied { background: #d4edda; border-color: var(--green); }
+  .rack-cell.high { background: var(--amber-light); border-color: var(--amber); }
+  .rack-cell.full { background: var(--red-light); border-color: var(--red); }
+  .rack-label { font-size: 11px; font-weight: 700; color: var(--gray-700); }
+  .rack-count { font-size: 18px; font-weight: 700; margin: 4px 0 2px; }
+  .rack-products { font-size: 9px; color: var(--gray-600); }
+
+  /* PROGRESS BAR */
+  .progress-bar { height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: var(--green); }
+  .progress-fill.warning { background: var(--amber); }
+  .progress-fill.danger { background: var(--red); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--gray-200); margin-bottom: 20px; }
+  .tab { padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--gray-600); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+  .tab.active { color: var(--green); border-bottom-color: var(--green); }
+  .tab:hover { color: var(--gray-900); }
+
+  /* TIMELINE */
+  .timeline { position: relative; }
+  .timeline-item { display: flex; gap: 14px; margin-bottom: 14px; }
+  .timeline-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .timeline-line { width: 2px; background: var(--gray-200); margin: 0 4px; }
+  .tl-text { font-size: 13px; }
+  .tl-time { font-size: 11px; color: var(--gray-500); }
+
+  /* NOTIFICATION */
+  .notification-bar {
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .notification {
+    background: #fff; border-radius: 10px; padding: 14px 18px;
+    box-shadow: var(--shadow-lg); border-left: 4px solid var(--green);
+    font-size: 13px; max-width: 320px; animation: slideIn 0.3s ease;
+  }
+  .notification.error { border-left-color: var(--red); }
+  .notification.warning { border-left-color: var(--amber); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* UTILS */
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .gap-4 { gap: 16px; }
+  .mb-1 { margin-bottom: 4px; }
+  .mb-2 { margin-bottom: 8px; }
+  .mb-3 { margin-bottom: 12px; }
+  .mb-4 { margin-bottom: 16px; }
+  .mt-3 { margin-top: 12px; }
+  .text-sm { font-size: 12px; }
+  .text-xs { font-size: 11px; }
+  .text-muted { color: var(--gray-600); }
+  .font-mono { font-family: var(--mono); }
+  .font-bold { font-weight: 700; }
+  .text-center { text-align: center; }
+  .w-full { width: 100%; }
+  .hidden { display: none !important; }
+
+  /* PRINT */
+  @media print {
+    .sidebar, .topbar, .no-print { display: none !important; }
+    .main { margin: 0; padding: 0; }
+    .label-preview { border: 2px solid #000; page-break-inside: avoid; }
+  }
+
+  /* DASHBOARD CHARTS */
+  .mini-chart { display: flex; align-items: flex-end; gap: 4px; height: 48px; }
+  .mini-bar { background: var(--green); border-radius: 3px 3px 0 0; flex: 1; opacity: 0.8; transition: opacity 0.15s; }
+  .mini-bar:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- NOTIFICATION BAR -->
+<div class="notification-bar" id="notifications"></div>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo"> <img src="C:\Users\camac\Downloads\WhatsApp Image 2026-05-31 at 11.50.25 AM.jpeg" alt="Logo reva" width="300" height="100"></div>
+    <div class="login-title">RVA Colombia SAS BIC</div>
+    <div class="login-sub">Sistema de Gestión de Inventario — Economía Circular</div>
+    <div class="form-group">
+      <label class="form-label">Usuario</label>
+      <input class="form-control" id="loginUser" placeholder="Ingrese su usuario" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input class="form-control" type="password" id="loginPass" placeholder="••••••••" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Área / Estación</label>
+      <select class="form-select" id="loginArea">
+        <option value="central">Central / Administración</option>
+        <option value="recibo">Recibo</option>
+        <option value="segregacion">Segregación</option>
+        <option value="llenado">Llenado / Mezclas</option>
+        <option value="despacho">Despacho</option>
+        <option value="produccion">Producción</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="doLogin()">Ingresar al Sistema</button>
+    <div style="margin-top:16px; font-size:11px; color:var(--gray-500); text-align:center">
+      <!-- Demo: usuario <strong>admin</strong> / clave <strong>rva2024</strong>-->
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo"><img src="C:\Users\camac\Downloads\WhatsApp Image 2026-05-31 at 11.50.25 AM.jpeg" alt="Logo reva" width="100" height="50"style="float: right; margin-left: 10px;"></div>
+    <div class="brand-name">RVA Colombia</div>
+    <div class="brand-sub">Inventario v1.0</div>
+  </div>
+
+  <div class="nav-section">Principal</div>
+  <div class="nav-item active" onclick="showView('dashboard')">
+    <span class="nav-icon">📊</span> Dashboard
+  </div>
+
+  <div class="nav-section">Movimientos</div>
+  <div class="nav-item" onclick="showView('entradas')">
+    <span class="nav-icon">📥</span> Entradas / Pedidos
+  </div>
+  <div class="nav-item" onclick="showView('salidas')">
+    <span class="nav-icon">📤</span> Salidas
+  </div>
+  <div class="nav-item" onclick="showView('stock')">
+    <span class="nav-icon">📦</span> Stock & Productos
+  </div>
+
+  <div class="nav-section">Trazabilidad</div>
+  <div class="nav-item" onclick="showView('ubicaciones')">
+    <span class="nav-icon">🏭</span> Ubicaciones / Bodegas
+  </div>
+  <div class="nav-item" onclick="showView('etiquetas')">
+    <span class="nav-icon">🏷️</span> Etiquetas & Códigos
+  </div>
+
+  <div class="nav-section">Operaciones</div>
+  <div class="nav-item" onclick="showView('programacion')">
+    <span class="nav-icon">📅</span> Programación Semanal
+  </div>
+  <div class="nav-item" onclick="showView('reportes')">
+    <span class="nav-icon">📋</span> Reportes
+  </div>
+  <div class="nav-item" onclick="showView('config')">
+    <span class="nav-icon">⚙️</span> Configuración
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-badge">
+      <div class="user-avatar" id="sidebarAvatar">AD</div>
+      <div>
+        <div class="user-name" id="sidebarUser">Admin</div>
+        <div class="user-role" id="sidebarArea">Central</div>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm" style="width:100%; margin-top:8px; font-size:11px" onclick="doLogout()">🚪 Cerrar Sesión</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="page-sub" id="pageSub">Resumen general del inventario</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-secondary btn-sm" onclick="backupData()">☁️ Respaldar</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportExcel()">📊 Exportar Excel</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">📄 Exportar CSV</button>
+    </div>
+  </div>
+
+  <!-- ============== DASHBOARD ============== -->
+  <div class="view active" id="view-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Productos</div>
+        <div class="stat-val text-blue" id="statTotalProducts">0</div>
+        <div class="stat-change text-green" id="statProductsChange">Referencias activas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Stock Total (kg)</div>
+        <div class="stat-val text-green" id="statTotalStock">0</div>
+        <div class="stat-change text-muted">Kilogramos en bodega</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Entradas Hoy</div>
+        <div class="stat-val text-green" id="statEntradasHoy">0</div>
+        <div class="stat-change text-muted">Movimientos de entrada</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Salidas Hoy</div>
+        <div class="stat-val text-amber" id="statSalidasHoy">0</div>
+        <div class="stat-change text-muted">Movimientos de salida</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Últimos Movimientos</div>
+          <button class="btn btn-secondary btn-sm" onclick="showView('entradas')">Ver todos</button>
+        </div>
+        <div class="table-wrap">
+          <table id="dashboardMovements">
+            <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Cantidad</th><th>Cliente</th><th>Estado</th></tr></thead>
+            <tbody id="dashboardMovementsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="card mb-3">
+          <div class="card-header"><div class="card-title">⚠️ Stock Crítico</div></div>
+          <div id="stockAlerts" style="padding:12px"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🗓️ Esta Semana</div></div>
+          <div id="weekSummary" style="padding:12px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== ENTRADAS ============== -->
+  <div class="view" id="view-entradas">
+    <div class="card">
+      <div class="card-header">
+        <div class="filters-row">
+          <input class="search-input" placeholder="🔍 Buscar por producto, cliente..." oninput="filterEntradas(this.value)" />
+          <select class="form-select" style="width:160px" onchange="filterEntradasArea(this.value)">
+            <option value="">Todas las áreas</option>
+            <option>Recibo</option><option>Segregación</option><option>Llenado</option><option>Producción</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modalEntrada')">➕ Nueva Entrada</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Código</th><th>Producto</th><th>Cliente</th><th>Cant.</th><th>UM</th><th>Kg</th><th>Área</th><th>Bodega / Rack</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="entradasBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== SALIDAS ============== -->
+  <div class="view" id="view-salidas">
+    <div class="card">
+      <div class="card-header">
+        <div class="filters-row">
+          <input class="search-input" placeholder="🔍 Buscar salidas..." oninput="filterSalidas(this.value)" />
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modalSalida')">➕ Registrar Salida</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Producto</th><th>Cliente</th><th>Cant.</th><th>Kg</th><th>Destino</th><th>Responsable</th><th>Acciones</th></tr></thead>
+          <tbody id="salidasBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== STOCK ============== -->
+  <div class="view" id="view-stock">
+    <div style="display:grid; grid-template-columns:3fr 1fr; gap:20px">
+      <div class="card">
+        <div class="card-header">
+          <div class="filters-row">
+            <input class="search-input" placeholder="🔍 Buscar producto..." oninput="filterStock(this.value)" />
+            <select class="form-select" style="width:160px">
+              <option>Todas las áreas</option>
+              <option>Alimentación Animal</option><option>Bioter</option><option>Empaques / Plástico</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modalProducto')">➕ Nuevo Producto</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Código EAN</th><th>Producto</th><th>Categoría</th><th>Stock</th><th>UM</th><th>Min</th><th>Ubicación</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="stockBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="card mb-3">
+          <div class="card-header"><div class="card-title">Agregar / Editar Producto</div></div>
+          <div class="card-body">
+            <div class="form-group mb-3">
+              <label class="form-label">Nombre del Producto</label>
+              <input class="form-control" id="quickProdName" placeholder="Nombre..." />
+            </div>
+            <div class="form-group mb-3">
+              <label class="form-label">Categoría</label>
+              <select class="form-select" id="quickProdCat">
+                <option>Alimentación Animal</option>
+                <option>Bioter - Limpieza</option>
+                <option>Empaques PP</option>
+                <option>Empaques PEAD</option>
+                <option>Empaques PEBD</option>
+                <option>Termoencogido</option>
+                <option>Materia Prima</option>
+              </select>
+            </div>
+            <div class="form-group mb-3">
+              <label class="form-label">Unidad de Medida</label>
+              <select class="form-select" id="quickProdUM">
+                <option>kg</option><option>lt</option><option>unidad</option><option>caja</option><option>bulto</option><option>tonelada</option>
+              </select>
+            </div>
+            <div class="form-group mb-3">
+              <label class="form-label">Stock Mínimo</label>
+              <input class="form-control" id="quickProdMin" type="number" placeholder="0" />
+            </div>
+            <button class="btn btn-primary w-full" onclick="quickAddProduct()">Guardar Producto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== UBICACIONES ============== -->
+  <div class="view" id="view-ubicaciones">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏭 Mapa de Bodegas</div>
+          <select class="form-select" style="width:180px" onchange="renderWarehouseMap(this.value)">
+            <option value="Bodega 1">Bodega 1 — Materias Primas</option>
+            <option value="Bodega 2">Bodega 2 — Producto Terminado</option>
+            <option value="Bodega 3">Bodega 3 — Empaques</option>
+          </select>
+        </div>
+        <div id="warehouseMapContainer"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📍 Buscar Producto</div></div>
+        <div class="card-body">
+          <div class="form-group mb-3">
+            <label class="form-label">Producto o Código EAN</label>
+            <input class="form-control" id="locationSearch" placeholder="Ingrese nombre o código..." oninput="searchProductLocation(this.value)" />
+          </div>
+          <div id="locationResult"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Asignar Ubicación</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modalUbicacion')">➕ Nueva Ubicación</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Producto</th><th>Bodega</th><th>Rack</th><th>Nivel</th><th>Cantidad</th><th>Actualizado</th><th>Acciones</th></tr></thead>
+          <tbody id="ubicacionesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== ETIQUETAS ============== -->
+  <div class="view" id="view-etiquetas">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Generar Etiqueta EAN-13 + QR</div></div>
+        <div class="card-body">
+          <div class="form-group mb-3">
+            <label class="form-label">Seleccionar Producto</label>
+            <select class="form-select" id="labelProduct" onchange="updateLabelPreview()">
+              <option value="">— Seleccione un producto —</option>
+            </select>
+          </div>
+          <div class="form-grid mb-3">
+            <div class="form-group">
+              <label class="form-label">Cantidad</label>
+              <input class="form-control" id="labelQty" type="number" value="1" oninput="updateLabelPreview()" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kilogramos</label>
+              <input class="form-control" id="labelKg" type="number" value="25" oninput="updateLabelPreview()" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unidad de Medida</label>
+              <select class="form-select" id="labelUM" onchange="updateLabelPreview()">
+                <option>kg</option><option>lt</option><option>unidad</option><option>caja</option><option>bulto</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cliente</label>
+              <input class="form-control" id="labelClient" placeholder="Cliente..." oninput="updateLabelPreview()" />
+            </div>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label">Lote / Número de Pedido</label>
+            <input class="form-control" id="labelLote" placeholder="LOT-2024-001" oninput="updateLabelPreview()" />
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" onclick="printLabel()">🖨️ Imprimir Etiqueta</button>
+            <button class="btn btn-secondary" onclick="updateLabelPreview()">🔄 Actualizar Vista</button>
+          </div>
+          <div style="margin-top:10px; font-size:11px; color:var(--gray-600)">
+            💡 Las etiquetas usan código EAN-13 + QR con trazabilidad completa
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Vista Previa de Etiqueta</div></div>
+          <div class="card-body" style="display:flex; flex-direction:column; align-items:center">
+            <div class="label-preview" id="labelPreviewArea">
+              <div class="label-company">RVA COLOMBIA SAS — ECONOMÍA CIRCULAR</div>
+              <div id="labelContent" style="font-family:var(--mono)">
+                <div style="text-align:center; color:var(--gray-400); font-size:12px; padding:20px 0">
+                  Seleccione un producto para generar la etiqueta
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== PROGRAMACIÓN SEMANAL ============== -->
+  <div class="view" id="view-programacion">
+    <div class="card mb-4">
+      <div class="card-header">
+        <div class="card-title">📅 Programación Semanal de Operarios</div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary btn-sm" onclick="prevWeek()">◀ Anterior</button>
+          <span id="weekLabel" style="font-size:13px; font-weight:600; padding:6px 12px; background:var(--gray-100); border-radius:6px"></span>
+          <button class="btn btn-secondary btn-sm" onclick="nextWeek()">Siguiente ▶</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modalTarea')">➕ Agregar Tarea</button>
+        </div>
+      </div>
+      <div id="weekPlanGrid" style="padding:16px; overflow-x:auto"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Stock Recomendado para esta Semana</div></div>
+      <div class="card-body">
+        <div class="alert alert-warning mb-3">
+          ⚠️ Basado en el stock actual, se recomienda priorizar los productos con menor inventario en la programación de la semana.
+        </div>
+        <div id="weeklyStockRecommend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== REPORTES ============== -->
+  <div class="view" id="view-reportes">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this,'tabKardex')">Kardex</div>
+      <div class="tab" onclick="switchTab(this,'tabInventario')">Inventario General</div>
+      <div class="tab" onclick="switchTab(this,'tabTrazabilidad')">Trazabilidad</div>
+      <div class="tab" onclick="switchTab(this,'tabClientes')">Por Cliente</div>
+    </div>
+    <div id="tabKardex" class="card">
+      <div class="card-header">
+        <div class="filters-row">
+          <select class="form-select" style="width:220px" id="kardexProduct">
+            <option value="">— Seleccione producto —</option>
+          </select>
+          <input type="date" class="form-control" style="width:160px" id="kardexFrom" />
+          <input type="date" class="form-control" style="width:160px" id="kardexTo" />
+          <button class="btn btn-primary btn-sm" onclick="loadKardex()">Filtrar</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="exportKardex()">📊 Exportar</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Entrada</th><th>Salida</th><th>Saldo</th><th>Usuario</th></tr></thead>
+          <tbody id="kardexBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="tabInventario" class="card hidden">
+      <div class="card-header"><div class="card-title">Inventario General</div>
+        <button class="btn btn-secondary btn-sm" onclick="exportExcel()">📊 Exportar Excel</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mín</th><th>Ubicación</th><th>Kg Totales</th><th>Estado</th></tr></thead>
+        <tbody id="reporteInvBody"></tbody>
+      </table></div>
+    </div>
+    <div id="tabTrazabilidad" class="card hidden">
+      <div class="card-header">
+        <div class="card-title">Trazabilidad por Lote</div>
+        <input class="search-input" placeholder="Buscar por lote, EAN..." oninput="filterTrazabilidad(this.value)" />
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Lote</th><th>EAN</th><th>Producto</th><th>Cliente</th><th>Entrada</th><th>Salida</th><th>Área</th><th>Operario</th></tr></thead>
+        <tbody id="trazabilidadBody"></tbody>
+      </table></div>
+    </div>
+    <div id="tabClientes" class="card hidden">
+      <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Productos</th><th>Total kg Recibidos</th><th>Total kg Despachados</th><th>Último Movimiento</th></tr></thead>
+        <tbody id="clientesBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ============== CONFIGURACIÓN ============== -->
+  <div class="view" id="view-config">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">👥 Usuarios del Sistema</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modalUser')">➕ Nuevo Usuario</button>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Usuario</th><th>Nombre</th><th>Área</th><th>Rol</th><th>Acciones</th></tr></thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="card mb-3">
+          <div class="card-header"><div class="card-title">🏭 Configurar Bodegas</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modalBodega')">➕ Nueva Bodega</button>
+          </div>
+          <div id="bodegaList" style="padding:12px"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">💾 Respaldo de Datos</div></div>
+          <div class="card-body">
+            <p style="font-size:13px; color:var(--gray-600); margin-bottom:12px">Respaldo automático cada 24h. Última sincronización: <strong id="lastBackup">—</strong></p>
+            <div class="flex gap-2">
+              <button class="btn btn-primary btn-sm" onclick="backupData()">☁️ Respaldar Ahora</button>
+              <button class="btn btn-secondary btn-sm" onclick="restoreData()">🔄 Restaurar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODALES ====== -->
+
+<!-- Modal Entrada -->
+<div class="modal-overlay" id="modalEntrada">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📥 Registrar Entrada / Pedido</div>
+      <button class="close-btn" onclick="closeModal('modalEntrada')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Producto</label>
+          <select class="form-select" id="entradaProduct" onchange="autoFillEntry()">
+            <option value="">— Seleccione —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cliente / Proveedor</label>
+          <input class="form-control" id="entradaCliente" placeholder="Nombre del cliente..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cantidad</label>
+          <input class="form-control" id="entradaCantidad" type="number" placeholder="0" oninput="calcKgEntrada()" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unidad de Medida</label>
+          <select class="form-select" id="entradaUM">
+            <option>kg</option><option>lt</option><option>unidad</option><option>caja</option><option>bulto</option><option>tonelada</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kilogramos Totales</label>
+          <input class="form-control" id="entradaKg" type="number" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Área Destino</label>
+          <select class="form-select" id="entradaArea">
+            <option>Recibo</option><option>Segregación</option><option>Llenado</option><option>Producción</option><option>Despacho</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bodega</label>
+          <select class="form-select" id="entradaBodega">
+            <option>Bodega 1</option><option>Bodega 2</option><option>Bodega 3</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rack</label>
+          <select class="form-select" id="entradaRack">
+            <option>Rack 1</option><option>Rack 2</option><option>Rack 3</option><option>Rack 4</option><option>Rack 5</option>
+            <option>Rack 6</option><option>Rack 7</option><option>Rack 8</option><option>Rack 9</option><option>Rack 10</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número de Lote</label>
+          <input class="form-control" id="entradaLote" placeholder="LOT-2024-001" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número de Pedido / Remisión</label>
+          <input class="form-control" id="entradaPedido" placeholder="PED-001" />
+        </div>
+        <div class="form-group col-span-2">
+          <label class="form-label">Observaciones</label>
+          <input class="form-control" id="entradaObs" placeholder="Condición del producto, observaciones..." />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalEntrada')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEntrada()">✅ Registrar Entrada</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Salida -->
+<div class="modal-overlay" id="modalSalida">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📤 Registrar Salida</div>
+      <button class="close-btn" onclick="closeModal('modalSalida')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Producto</label>
+          <select class="form-select" id="salidaProduct">
+            <option value="">— Seleccione —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cliente Destino</label>
+          <input class="form-control" id="salidaCliente" placeholder="Cliente..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cantidad</label>
+          <input class="form-control" id="salidaCantidad" type="number" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kilogramos</label>
+          <input class="form-control" id="salidaKg" type="number" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Destino / Área</label>
+          <select class="form-select" id="salidaDestino">
+            <option>Despacho externo</option><option>Producción interna</option><option>Segregación</option><option>Llenado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Responsable / Operario</label>
+          <input class="form-control" id="salidaResponsable" placeholder="Nombre operario..." />
+        </div>
+        <div class="form-group col-span-2">
+          <label class="form-label">Número de Remisión / Orden</label>
+          <input class="form-control" id="salidaRemision" placeholder="REM-001" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalSalida')">Cancelar</button>
+      <button class="btn btn-danger" onclick="saveSalida()">📤 Registrar Salida</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Producto -->
+<div class="modal-overlay" id="modalProducto">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📦 Nuevo Producto</div>
+      <button class="close-btn" onclick="closeModal('modalProducto')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombre del Producto</label>
+          <input class="form-control" id="prodNombre" placeholder="Nombre completo del producto..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoría / Proceso</label>
+          <select class="form-select" id="prodCategoria">
+            <option>Alimentación Animal</option><option>Bioter - Limpieza</option>
+            <option>Empaques PP</option><option>Empaques PEAD</option><option>Empaques PEBD</option>
+            <option>Termoencogido</option><option>Materia Prima</option><option>Producto en Proceso</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unidad de Medida</label>
+          <select class="form-select" id="prodUM">
+            <option>kg</option><option>lt</option><option>unidad</option><option>caja</option><option>bulto</option><option>tonelada</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stock Mínimo</label>
+          <input class="form-control" id="prodMin" type="number" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cliente Principal</label>
+          <input class="form-control" id="prodCliente" placeholder="Ej: Unilever, P&G..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Código EAN-13 (auto-generado)</label>
+          <input class="form-control font-mono" id="prodEAN" placeholder="Se genera automáticamente" readonly style="background:var(--gray-100)" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProduct()">✅ Guardar Producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ubicación -->
+<div class="modal-overlay" id="modalUbicacion">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📍 Asignar Ubicación</div>
+      <button class="close-btn" onclick="closeModal('modalUbicacion')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Producto</label>
+          <select class="form-select" id="ubicProducto"><option value="">— Seleccione —</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bodega</label>
+          <select class="form-select" id="ubicBodega">
+            <option>Bodega 1</option><option>Bodega 2</option><option>Bodega 3</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rack / Posición</label>
+          <select class="form-select" id="ubicRack">
+            <option>Rack 1</option><option>Rack 2</option><option>Rack 3</option><option>Rack 4</option><option>Rack 5</option>
+            <option>Rack 6</option><option>Rack 7</option><option>Rack 8</option><option>Rack 9</option><option>Rack 10</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nivel</label>
+          <select class="form-select" id="ubicNivel">
+            <option>Nivel 1</option><option>Nivel 2</option><option>Nivel 3</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cantidad</label>
+          <input class="form-control" id="ubicCantidad" type="number" placeholder="0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalUbicacion')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUbicacion()">✅ Asignar Ubicación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tarea -->
+<div class="modal-overlay" id="modalTarea">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📅 Agregar Tarea Semanal</div>
+      <button class="close-btn" onclick="closeModal('modalTarea')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Día</label>
+          <select class="form-select" id="tareaDay">
+            <option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option>Sábado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Área</label>
+          <select class="form-select" id="tareaArea">
+            <option>Recibo</option><option>Segregación</option><option>Desnaturalización</option><option>Llenado</option><option>Producción</option><option>Despacho</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Operario</label>
+          <input class="form-control" id="tareaOperario" placeholder="Nombre del operario..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Producto a Trabajar</label>
+          <select class="form-select" id="tareaProducto"><option value="">— Seleccione —</option></select>
+        </div>
+        <div class="form-group col-span-2">
+          <label class="form-label">Descripción de la Tarea</label>
+          <input class="form-control" id="tareaDesc" placeholder="Descripción detallada..." />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalTarea')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTarea()">✅ Guardar Tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Usuario -->
+<div class="modal-overlay" id="modalUser">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">👤 Nuevo Usuario</div>
+      <button class="close-btn" onclick="closeModal('modalUser')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombre Completo</label>
+          <input class="form-control" id="userNombre" placeholder="Nombre completo..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Usuario (login)</label>
+          <input class="form-control" id="userLogin" placeholder="usuario123" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input class="form-control" id="userPass" type="password" placeholder="••••••••" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Área</label>
+          <select class="form-select" id="userArea">
+            <option>Central</option><option>Recibo</option><option>Segregación</option><option>Llenado</option><option>Despacho</option><option>Producción</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rol</label>
+          <select class="form-select" id="userRol">
+            <option>Administrador</option><option>Supervisor</option><option>Operario</option><option>Visualizador</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalUser')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser()">✅ Crear Usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Bodega -->
+<div class="modal-overlay" id="modalBodega">
+  <div class="modal" style="width:400px">
+    <div class="modal-header">
+      <div class="modal-title">🏭 Nueva Bodega</div>
+      <button class="close-btn" onclick="closeModal('modalBodega')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group mb-3">
+        <label class="form-label">Nombre de la Bodega</label>
+        <input class="form-control" id="bodegaNombre" placeholder="Ej: Bodega 4 — Despacho" />
+      </div>
+      <div class="form-group mb-3">
+        <label class="form-label">Número de Racks</label>
+        <input class="form-control" id="bodegaRacks" type="number" value="10" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <input class="form-control" id="bodegaDesc" placeholder="Tipo de productos almacenados..." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalBodega')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveBodega()">✅ Crear Bodega</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== DATA STORE =====================
+const DB = {
+  users: [
+    {id:1, login:'admin', pass:'rva2024', nombre:'Administrador RVA', area:'Central', rol:'Administrador'},
+    {id:2, login:'recibo', pass:'rva2024', nombre:'Juan García', area:'Recibo', rol:'Operario'},
+    {id:3, login:'produccion', pass:'rva2024', nombre:'María López', area:'Producción', rol:'Operario'},
+    {id:4, login:'despacho', pass:'rva2024', nombre:'Carlos Ruiz', area:'Despacho', rol:'Operario'},
+    {id:5, login:'supervisor', pass:'rva2024', nombre:'Ana Martínez', area:'Central', rol:'Supervisor'},
+  ],
+  products: [
+    {id:1, ean:'7701234560010', nombre:'Papel Higiénico Industrial', categoria:'Materia Prima', um:'kg', min:100, cliente:'Unilever', stock:450},
+    {id:2, ean:'7701234560027', nombre:'Miel de Confitería A', categoria:'Alimentación Animal', um:'lt', min:200, cliente:'Colombina', stock:320},
+    {id:3, ean:'7701234560034', nombre:'Shampoo Cabello Base', categoria:'Bioter - Limpieza', um:'lt', min:150, cliente:'P&G', stock:85},
+    {id:4, ean:'7701234560041', nombre:'Plástico PP Reciclado', categoria:'Empaques PP', um:'kg', min:500, cliente:'Carvajal', stock:1200},
+    {id:5, ean:'7701234560058', nombre:'PEAD Triturado', categoria:'Empaques PEAD', um:'kg', min:300, cliente:'Empresas Polar', stock:230},
+    {id:6, ean:'7701234560065', nombre:'Jabón Líquido Base', categoria:'Bioter - Limpieza', um:'lt', min:100, cliente:'Henkel', stock:45},
+    {id:7, ean:'7701234560072', nombre:'Núcleo Balanceado B', categoria:'Alimentación Animal', um:'kg', min:250, cliente:'Finca Ganadería', stock:780},
+    {id:8, ean:'7701234560089', nombre:'PEBD Aglutinado', categoria:'Empaques PEBD', um:'kg', min:400, cliente:'Pavco', stock:560},
+  ],
+  entradas: [],
+  salidas: [],
+  ubicaciones: [
+    {id:1, productoId:1, bodega:'Bodega 1', rack:'Rack 7', nivel:'Nivel 1', cantidad:200, fecha:'2024-01-15'},
+    {id:2, productoId:1, bodega:'Bodega 1', rack:'Rack 8', nivel:'Nivel 2', cantidad:250, fecha:'2024-01-15'},
+    {id:3, productoId:2, bodega:'Bodega 2', rack:'Rack 3', nivel:'Nivel 1', cantidad:320, fecha:'2024-01-14'},
+    {id:4, productoId:3, bodega:'Bodega 2', rack:'Rack 5', nivel:'Nivel 1', cantidad:85, fecha:'2024-01-16'},
+    {id:5, productoId:4, bodega:'Bodega 3', rack:'Rack 1', nivel:'Nivel 1', cantidad:600, fecha:'2024-01-13'},
+    {id:6, productoId:4, bodega:'Bodega 3', rack:'Rack 2', nivel:'Nivel 2', cantidad:600, fecha:'2024-01-13'},
+    {id:7, productoId:5, bodega:'Bodega 3', rack:'Rack 4', nivel:'Nivel 1', cantidad:230, fecha:'2024-01-16'},
+    {id:8, productoId:7, bodega:'Bodega 1', rack:'Rack 2', nivel:'Nivel 1', cantidad:780, fecha:'2024-01-12'},
+  ],
+  tareas: [
+    {id:1, dia:'Lunes', area:'Recibo', operario:'Juan García', productoId:1, desc:'Recibo y clasificación de materiales Unilever'},
+    {id:2, dia:'Martes', area:'Segregación', operario:'María López', productoId:1, desc:'Segregar referencias mezcladas de Unilever'},
+    {id:3, dia:'Miércoles', area:'Llenado', operario:'Carlos Ruiz', productoId:2, desc:'Mezclas de miel de confitería para alimentación animal'},
+    {id:4, dia:'Jueves', area:'Producción', operario:'Ana Martínez', productoId:4, desc:'Peletizado de plástico PP'},
+    {id:5, dia:'Viernes', area:'Despacho', operario:'Juan García', productoId:7, desc:'Despacho núcleo balanceado cliente Finca Ganadería'},
+  ],
+  bodegas: ['Bodega 1', 'Bodega 2', 'Bodega 3'],
+  currentUser: null,
+  weekOffset: 0,
+  nextId: {product: 9, entrada: 1, salida: 1, ubicacion: 9, tarea: 6, user: 6},
+};
+
+// Load from localStorage
+function loadData() {
+  const saved = localStorage.getItem('rva_data');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      Object.assign(DB, parsed);
+    } catch(e) {}
+  }
+}
+
+function saveData() {
+  localStorage.setItem('rva_data', JSON.stringify(DB));
+  localStorage.setItem('rva_lastBackup', new Date().toLocaleString('es-CO'));
+}
+
+// ===================== AUTH =====================
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const a = document.getElementById('loginArea').value;
+  const user = DB.users.find(x => x.login === u && x.pass === p);
+  if (!user) { showNotif('Usuario o contraseña incorrectos', 'error'); return; }
+  DB.currentUser = {...user, station: a};
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('sidebarUser').textContent = user.nombre;
+  document.getElementById('sidebarArea').textContent = a.charAt(0).toUpperCase() + a.slice(1);
+  document.getElementById('sidebarAvatar').textContent = user.nombre.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  populateSelects();
+  renderAll();
+  showNotif(`Bienvenido, ${user.nombre}!`);
+}
+
+function doLogout() {
+  DB.currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ===================== NAVIGATION =====================
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(n => { if (n.textContent.toLowerCase().includes(name === 'stock' ? 'stock' : name === 'entradas' ? 'entrada' : name === 'salidas' ? 'salida' : name === 'ubicaciones' ? 'ubicaci' : name === 'etiquetas' ? 'etiqueta' : name === 'programacion' ? 'programaci' : name === 'reportes' ? 'reporte' : name === 'config' ? 'config' : name)) { n.classList.add('active'); } });
+  const titles = {dashboard:'Dashboard', entradas:'Entradas / Pedidos', salidas:'Salidas', stock:'Stock & Productos', ubicaciones:'Ubicaciones / Bodegas', etiquetas:'Etiquetas & Códigos', programacion:'Programación Semanal', reportes:'Reportes & Kardex', config:'Configuración'};
+  const subs = {dashboard:'Resumen general del inventario', entradas:'Registro de ingreso de pedidos y productos', salidas:'Registro de salida de materiales', stock:'Control de inventario y referencias', ubicaciones:'Mapa de bodegas y localización de productos', etiquetas:'Generación de etiquetas EAN-13 y QR', programacion:'Planificación semanal de operarios', reportes:'Kardex, trazabilidad y reportes', config:'Usuarios, bodegas y configuración del sistema'};
+  document.getElementById('pageTitle').textContent = titles[name] || name;
+  document.getElementById('pageSub').textContent = subs[name] || '';
+  if (name === 'etiquetas') populateLabelSelect();
+  if (name === 'programacion') { renderWeekPlan(); renderWeeklyStockRecommend(); }
+  if (name === 'ubicaciones') renderWarehouseMap('Bodega 1');
+  if (name === 'reportes') { renderReporteInventario(); renderTrazabilidad(); renderClientes(); renderKardex(); }
+  if (name === 'config') renderUsers();
+}
+
+// ===================== RENDER ALL =====================
+function renderAll() {
+  renderDashboard();
+  renderEntradas();
+  renderSalidas();
+  renderStock();
+  renderUbicaciones();
+  renderBodegas();
+  renderWeekPlan();
+  renderUsers();
+  document.getElementById('lastBackup').textContent = localStorage.getItem('rva_lastBackup') || 'Nunca';
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  const today = new Date().toDateString();
+  const entradasHoy = DB.entradas.filter(e => new Date(e.fecha).toDateString() === today).length;
+  const salidasHoy = DB.salidas.filter(s => new Date(s.fecha).toDateString() === today).length;
+  const totalKg = DB.products.reduce((s, p) => s + (parseFloat(p.stock)||0), 0);
+  document.getElementById('statTotalProducts').textContent = DB.products.length;
+  document.getElementById('statTotalStock').textContent = totalKg.toLocaleString('es-CO');
+  document.getElementById('statEntradasHoy').textContent = entradasHoy;
+  document.getElementById('statSalidasHoy').textContent = salidasHoy;
+
+  // Movements
+  const allMov = [
+    ...DB.entradas.map(e => ({...e, tipo:'Entrada'})),
+    ...DB.salidas.map(s => ({...s, tipo:'Salida'}))
+  ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).slice(0,8);
+  const tbody = document.getElementById('dashboardMovementsBody');
+  tbody.innerHTML = allMov.map(m => {
+    const prod = DB.products.find(p => p.id == m.productoId);
+    return `<tr>
+      <td>${formatDate(m.fecha)}</td>
+      <td><span class="badge ${m.tipo==='Entrada'?'badge-green':'badge-amber'}">${m.tipo}</span></td>
+      <td>${prod ? prod.nombre : '—'}</td>
+      <td class="font-mono">${m.cantidad} ${m.um||''}</td>
+      <td>${m.cliente||'—'}</td>
+      <td><span class="badge badge-green">✓ Registrado</span></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="text-center text-muted" style="padding:20px">Sin movimientos registrados</td></tr>';
+
+  // Stock alerts
+  const low = DB.products.filter(p => parseFloat(p.stock) < parseFloat(p.min));
+  const alertsDiv = document.getElementById('stockAlerts');
+  alertsDiv.innerHTML = low.length === 0
+    ? '<div style="font-size:13px; color:var(--gray-500); padding:4px">✅ Todos los productos sobre el mínimo</div>'
+    : low.map(p => `<div style="font-size:12px; padding:6px 0; border-bottom:1px solid var(--gray-100)">
+        <strong style="color:var(--red)">${p.nombre}</strong><br>
+        <span style="color:var(--gray-600)">Stock: ${p.stock} ${p.um} | Mín: ${p.min}</span>
+      </div>`).join('');
+
+  document.getElementById('weekSummary').innerHTML = `
+    <div style="font-size:13px; color:var(--gray-700)">
+      <div style="padding:5px 0; border-bottom:1px solid var(--gray-100)">📦 Entradas: <strong>${DB.entradas.length}</strong></div>
+      <div style="padding:5px 0; border-bottom:1px solid var(--gray-100)">📤 Salidas: <strong>${DB.salidas.length}</strong></div>
+      <div style="padding:5px 0; border-bottom:1px solid var(--gray-100)">🏭 Referencias: <strong>${DB.products.length}</strong></div>
+      <div style="padding:5px 0">📍 Ubicaciones: <strong>${DB.ubicaciones.length}</strong></div>
+    </div>`;
+}
+
+// ===================== ENTRADAS =====================
+function renderEntradas(filter='', area='') {
+  let items = [...DB.entradas].sort((a,b) => new Date(b.fecha)-new Date(a.fecha));
+  if (filter) items = items.filter(e => {
+    const p = DB.products.find(x=>x.id==e.productoId);
+    return (p&&p.nombre.toLowerCase().includes(filter.toLowerCase())) || (e.cliente&&e.cliente.toLowerCase().includes(filter.toLowerCase()));
+  });
+  if (area) items = items.filter(e => e.area === area);
+  const tbody = document.getElementById('entradasBody');
+  tbody.innerHTML = items.map(e => {
+    const p = DB.products.find(x=>x.id==e.productoId);
+    return `<tr>
+      <td>${formatDate(e.fecha)}</td>
+      <td class="font-mono" style="font-size:11px">${p?p.ean:'—'}</td>
+      <td><strong>${p?p.nombre:'—'}</strong>${e.lote?`<br><span class="text-xs text-muted">${e.lote}</span>`:''}</td>
+      <td>${e.cliente||'—'}</td>
+      <td class="font-mono">${e.cantidad}</td>
+      <td>${e.um||''}</td>
+      <td class="font-mono">${e.kg||0} kg</td>
+      <td><span class="badge badge-blue">${e.area||'—'}</span></td>
+      <td style="font-size:12px">${e.bodega||'—'} / ${e.rack||'—'}</td>
+      <td><span class="badge badge-green">Registrado</span></td>
+      <td><button class="btn btn-secondary btn-sm btn-icon" onclick="showLabel(${e.productoId})" title="Ver etiqueta">🏷️</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="11" class="text-center text-muted" style="padding:20px">No hay entradas registradas</td></tr>';
+}
+
+function filterEntradas(v) { renderEntradas(v); }
+function filterEntradasArea(v) { renderEntradas('', v); }
+function autoFillEntry() { }
+function calcKgEntrada() { }
+
+function saveEntrada() {
+  const prodId = parseInt(document.getElementById('entradaProduct').value);
+  const cantidad = parseFloat(document.getElementById('entradaCantidad').value);
+  if (!prodId || !cantidad) { showNotif('Complete los campos obligatorios', 'error'); return; }
+  const entrada = {
+    id: DB.nextId.entrada++,
+    fecha: new Date().toISOString(),
+    productoId: prodId,
+    cliente: document.getElementById('entradaCliente').value,
+    cantidad,
+    um: document.getElementById('entradaUM').value,
+    kg: parseFloat(document.getElementById('entradaKg').value)||0,
+    area: document.getElementById('entradaArea').value,
+    bodega: document.getElementById('entradaBodega').value,
+    rack: document.getElementById('entradaRack').value,
+    lote: document.getElementById('entradaLote').value,
+    pedido: document.getElementById('entradaPedido').value,
+    obs: document.getElementById('entradaObs').value,
+    usuario: DB.currentUser?.nombre
+  };
+  DB.entradas.push(entrada);
+  // Update stock
+  const p = DB.products.find(x=>x.id===prodId);
+  if (p) p.stock = (parseFloat(p.stock)||0) + cantidad;
+  // Auto ubicacion
+  if (entrada.bodega && entrada.rack) {
+    DB.ubicaciones.push({id:DB.nextId.ubicacion++, productoId:prodId, bodega:entrada.bodega, rack:entrada.rack, nivel:'Nivel 1', cantidad, fecha:new Date().toISOString()});
+  }
+  saveData();
+  closeModal('modalEntrada');
+  renderAll();
+  showNotif('✅ Entrada registrada correctamente');
+}
+
+// ===================== SALIDAS =====================
+function renderSalidas(filter='') {
+  let items = [...DB.salidas].sort((a,b) => new Date(b.fecha)-new Date(a.fecha));
+  if (filter) items = items.filter(s => {
+    const p = DB.products.find(x=>x.id==s.productoId);
+    return p&&p.nombre.toLowerCase().includes(filter.toLowerCase());
+  });
+  const tbody = document.getElementById('salidasBody');
+  tbody.innerHTML = items.map(s => {
+    const p = DB.products.find(x=>x.id==s.productoId);
+    return `<tr>
+      <td>${formatDate(s.fecha)}</td>
+      <td><strong>${p?p.nombre:'—'}</strong></td>
+      <td>${s.cliente||'—'}</td>
+      <td class="font-mono">${s.cantidad}</td>
+      <td class="font-mono">${s.kg||0} kg</td>
+      <td><span class="badge badge-amber">${s.destino||'—'}</span></td>
+      <td>${s.responsable||'—'}</td>
+      <td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteSalida(${s.id})" title="Eliminar">🗑</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" class="text-center text-muted" style="padding:20px">No hay salidas registradas</td></tr>';
+}
+
+function filterSalidas(v) { renderSalidas(v); }
+
+function saveSalida() {
+  const prodId = parseInt(document.getElementById('salidaProduct').value);
+  const cantidad = parseFloat(document.getElementById('salidaCantidad').value);
+  if (!prodId || !cantidad) { showNotif('Complete los campos obligatorios', 'error'); return; }
+  const p = DB.products.find(x=>x.id===prodId);
+  if (p && parseFloat(p.stock) < cantidad) { showNotif('⚠️ Stock insuficiente para esta salida', 'warning'); return; }
+  const salida = {
+    id: DB.nextId.salida++,
+    fecha: new Date().toISOString(),
+    productoId: prodId,
+    cliente: document.getElementById('salidaCliente').value,
+    cantidad,
+    kg: parseFloat(document.getElementById('salidaKg').value)||0,
+    destino: document.getElementById('salidaDestino').value,
+    responsable: document.getElementById('salidaResponsable').value,
+    remision: document.getElementById('salidaRemision').value,
+    usuario: DB.currentUser?.nombre
+  };
+  DB.salidas.push(salida);
+  if (p) p.stock = Math.max(0, (parseFloat(p.stock)||0) - cantidad);
+  saveData();
+  closeModal('modalSalida');
+  renderAll();
+  showNotif('📤 Salida registrada correctamente');
+}
+
+function deleteSalida(id) {
+  if (!confirm('¿Eliminar esta salida?')) return;
+  DB.salidas = DB.salidas.filter(s=>s.id!==id);
+  saveData(); renderSalidas();
+}
+
+// ===================== STOCK =====================
+function renderStock(filter='') {
+  let items = [...DB.products];
+  if (filter) items = items.filter(p => p.nombre.toLowerCase().includes(filter.toLowerCase()) || p.ean.includes(filter));
+  const tbody = document.getElementById('stockBody');
+  tbody.innerHTML = items.map(p => {
+    const stock = parseFloat(p.stock)||0;
+    const min = parseFloat(p.min)||0;
+    const pct = min > 0 ? Math.min(100, (stock/min)*100) : 100;
+    const cls = stock < min ? 'danger' : stock < min*1.5 ? 'warning' : '';
+    const badgeCls = stock < min ? 'badge-red' : stock < min*1.5 ? 'badge-amber' : 'badge-green';
+    const badgeTxt = stock < min ? '⚠️ Crítico' : stock < min*1.5 ? '! Bajo' : '✓ Normal';
+    const ub = DB.ubicaciones.find(u=>u.productoId==p.id);
+    return `<tr>
+      <td class="font-mono" style="font-size:11px">${p.ean}</td>
+      <td><strong>${p.nombre}</strong><br><span class="text-xs text-muted">${p.cliente||''}</span></td>
+      <td><span class="badge badge-blue" style="font-size:10px">${p.categoria}</span></td>
+      <td>
+        <div style="font-size:15px; font-weight:700; ${stock<min?'color:var(--red)':''}">${stock} ${p.um}</div>
+        <div class="progress-bar" style="margin-top:4px"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>
+      </td>
+      <td>${p.um}</td>
+      <td style="font-size:12px; color:var(--gray-600)">${min}</td>
+      <td style="font-size:12px">${ub ? ub.bodega+' / '+ub.rack : '<span class="text-muted">Sin asignar</span>'}</td>
+      <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="showLabel(${p.id})" title="Etiqueta">🏷️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteProduct(${p.id})" title="Eliminar">🗑</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" class="text-center text-muted" style="padding:20px">Sin productos</td></tr>';
+}
+
+function filterStock(v) { renderStock(v); }
+
+function saveProduct() {
+  const nombre = document.getElementById('prodNombre').value.trim();
+  if (!nombre) { showNotif('Ingrese el nombre del producto', 'error'); return; }
+  const prod = {
+    id: DB.nextId.product++,
+    ean: generateEAN13(),
+    nombre,
+    categoria: document.getElementById('prodCategoria').value,
+    um: document.getElementById('prodUM').value,
+    min: parseFloat(document.getElementById('prodMin').value)||0,
+    cliente: document.getElementById('prodCliente').value,
+    stock: 0,
+  };
+  DB.products.push(prod);
+  saveData();
+  closeModal('modalProducto');
+  renderAll();
+  populateSelects();
+  showNotif('✅ Producto registrado con EAN-13: ' + prod.ean);
+}
+
+function quickAddProduct() {
+  const nombre = document.getElementById('quickProdName').value.trim();
+  if (!nombre) { showNotif('Ingrese el nombre del producto', 'error'); return; }
+  const prod = {
+    id: DB.nextId.product++,
+    ean: generateEAN13(),
+    nombre,
+    categoria: document.getElementById('quickProdCat').value,
+    um: document.getElementById('quickProdUM').value,
+    min: parseFloat(document.getElementById('quickProdMin').value)||0,
+    cliente: '',
+    stock: 0,
+  };
+  DB.products.push(prod);
+  saveData(); renderAll(); populateSelects();
+  showNotif('✅ Producto guardado: ' + prod.nombre);
+  document.getElementById('quickProdName').value = '';
+}
+
+function deleteProduct(id) {
+  if (!confirm('¿Eliminar este producto?')) return;
+  DB.products = DB.products.filter(p=>p.id!==id);
+  saveData(); renderAll(); populateSelects();
+}
+
+// ===================== UBICACIONES =====================
+function renderUbicaciones() {
+  const tbody = document.getElementById('ubicacionesBody');
+  tbody.innerHTML = DB.ubicaciones.map(u => {
+    const p = DB.products.find(x=>x.id==u.productoId);
+    return `<tr>
+      <td><strong>${p?p.nombre:'—'}</strong></td>
+      <td>${u.bodega}</td>
+      <td>${u.rack}</td>
+      <td>${u.nivel||'—'}</td>
+      <td class="font-mono">${u.cantidad}</td>
+      <td style="font-size:12px">${formatDate(u.fecha)}</td>
+      <td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteUbicacion(${u.id})">🗑</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="text-center text-muted" style="padding:20px">Sin ubicaciones</td></tr>';
+}
+
+function deleteUbicacion(id) {
+  DB.ubicaciones = DB.ubicaciones.filter(u=>u.id!==id);
+  saveData(); renderUbicaciones();
+}
+
+function renderWarehouseMap(bodega) {
+  const racks = 10;
+  const container = document.getElementById('warehouseMapContainer');
+  let html = '<div class="warehouse-map">';
+  for (let i=1; i<=racks; i++) {
+    const ubicsInRack = DB.ubicaciones.filter(u=>u.bodega===bodega && u.rack==='Rack '+i);
+    const products = ubicsInRack.map(u => DB.products.find(p=>p.id==u.productoId)).filter(Boolean);
+    const qty = ubicsInRack.reduce((s,u)=>s+parseFloat(u.cantidad||0),0);
+    const cls = ubicsInRack.length === 0 ? '' : qty > 500 ? 'full' : qty > 200 ? 'high' : 'occupied';
+    html += `<div class="rack-cell ${cls}" onclick="showRackDetail('${bodega}','Rack ${i}')">
+      <div class="rack-label">Rack ${i}</div>
+      <div class="rack-count" style="color:${cls==='full'?'var(--red)':cls==='high'?'var(--amber)':cls==='occupied'?'var(--green)':'var(--gray-500)'}">${qty > 0 ? qty.toFixed(0) : '—'}</div>
+      <div class="rack-products">${products.length > 0 ? products[0].nombre.slice(0,16)+'…' : 'Vacío'}</div>
+    </div>`;
+  }
+  html += '</div>';
+  html += '<div style="padding:8px 16px; font-size:11px; color:var(--gray-600); display:flex; gap:16px; border-top:1px solid var(--gray-200)">';
+  html += '<span style="color:var(--green)">■ Normal</span> <span style="color:var(--amber)">■ Lleno (>200)</span> <span style="color:var(--red)">■ Máximo (>500)</span> <span style="color:var(--gray-400)">■ Vacío</span>';
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function showRackDetail(bodega, rack) {
+  const ubs = DB.ubicaciones.filter(u=>u.bodega===bodega && u.rack===rack);
+  if (!ubs.length) { showNotif(`${rack} de ${bodega}: Vacío`); return; }
+  const info = ubs.map(u => {
+    const p = DB.products.find(x=>x.id==u.productoId);
+    return `${p?p.nombre:'?'}: ${u.cantidad} ${p?p.um:''}`;
+  }).join('\n');
+  alert(`📍 ${bodega} — ${rack}\n\n${info}`);
+}
+
+function saveUbicacion() {
+  const prodId = parseInt(document.getElementById('ubicProducto').value);
+  if (!prodId) { showNotif('Seleccione un producto', 'error'); return; }
+  DB.ubicaciones.push({
+    id: DB.nextId.ubicacion++,
+    productoId: prodId,
+    bodega: document.getElementById('ubicBodega').value,
+    rack: document.getElementById('ubicRack').value,
+    nivel: document.getElementById('ubicNivel').value,
+    cantidad: parseFloat(document.getElementById('ubicCantidad').value)||0,
+    fecha: new Date().toISOString()
+  });
+  saveData(); closeModal('modalUbicacion'); renderUbicaciones(); renderWarehouseMap(document.querySelector('.form-select[onchange]')?.value||'Bodega 1');
+  showNotif('📍 Ubicación asignada');
+}
+
+function searchProductLocation(q) {
+  const div = document.getElementById('locationResult');
+  if (!q || q.length < 2) { div.innerHTML = ''; return; }
+  const prods = DB.products.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase()) || p.ean.includes(q));
+  if (!prods.length) { div.innerHTML = '<div class="alert alert-warning">No se encontró ningún producto</div>'; return; }
+  div.innerHTML = prods.map(p => {
+    const ubs = DB.ubicaciones.filter(u=>u.productoId==p.id);
+    return `<div style="padding:10px; background:var(--gray-50); border-radius:8px; margin-bottom:8px; border:1px solid var(--gray-200)">
+      <strong style="font-size:14px">${p.nombre}</strong><br>
+      <span class="font-mono text-xs">${p.ean}</span><br>
+      <span style="font-size:13px; color:var(--green); font-weight:600">Stock total: ${p.stock} ${p.um}</span><br>
+      ${ubs.length ? ubs.map(u=>`📍 <strong>${u.bodega}</strong> — <strong>${u.rack}</strong> — ${u.nivel}: ${u.cantidad} ${p.um}`).join('<br>') : '<span style="color:var(--gray-500)">Sin ubicación asignada</span>'}
+    </div>`;
+  }).join('');
+}
+
+// ===================== ETIQUETAS =====================
+function populateLabelSelect() {
+  const sel = document.getElementById('labelProduct');
+  sel.innerHTML = '<option value="">— Seleccione un producto —</option>' +
+    DB.products.map(p => `<option value="${p.id}">${p.nombre} (${p.ean})</option>`).join('');
+}
+
+function updateLabelPreview() {
+  const prodId = parseInt(document.getElementById('labelProduct').value);
+  if (!prodId) return;
+  const p = DB.products.find(x=>x.id==prodId);
+  const qty = document.getElementById('labelQty').value || '1';
+  const kg = document.getElementById('labelKg').value || '25';
+  const um = document.getElementById('labelUM').value || p.um;
+  const client = document.getElementById('labelClient').value || p.cliente || 'Cliente';
+  const lote = document.getElementById('labelEntrada') ? '' : (document.getElementById('labelLote').value || 'LOT-AUTO');
+  const ean = p.ean;
+
+  const content = document.getElementById('labelContent');
+  content.innerHTML = `
+    <div class="label-row"><span>Producto:</span><span class="label-bold">${p.nombre.slice(0,24)}</span></div>
+    <div class="label-row"><span>Código EAN-13:</span><span class="label-bold">${ean}</span></div>
+    <div class="label-row"><span>Categoría:</span><span>${p.categoria}</span></div>
+    <div class="label-row"><span>Cantidad:</span><span class="label-bold">${qty} ${um}</span></div>
+    <div class="label-row"><span>Peso (kg):</span><span class="label-bold">${kg} kg</span></div>
+    <div class="label-row"><span>Cliente:</span><span class="label-bold">${client}</span></div>
+    <div class="label-row"><span>Lote:</span><span>${lote}</span></div>
+    <div class="label-row"><span>Fecha:</span><span>${new Date().toLocaleDateString('es-CO')}</span></div>
+    <div class="label-barcode">
+      <svg id="barcodesvg"></svg>
+    </div>
+    <div class="label-code-text">${ean}</div>
+    <div style="text-align:center; margin-top:8px; font-size:9px; color:#666">QR — Trazabilidad completa</div>
+    <div class="label-qr" id="labelQRdiv"></div>
+  `;
+  try {
+    JsBarcode("#barcodesvg", ean, {format:"EAN13", width:1.5, height:40, displayValue:false, margin:0});
+  } catch(e) {}
+  try {
+    document.getElementById('labelQRdiv').innerHTML = '';
+    const qrData = JSON.stringify({ean, producto:p.nombre, kg, um, cliente:client, lote, fecha:new Date().toISOString()});
+    new QRCode(document.getElementById('labelQRdiv'), {text:qrData, width:80, height:80, correctLevel:QRCode.CorrectLevel.M});
+  } catch(e) {}
+}
+
+function showLabel(prodId) {
+  showView('etiquetas');
+  setTimeout(() => {
+    document.getElementById('labelProduct').value = prodId;
+    updateLabelPreview();
+  }, 100);
+}
+
+function printLabel() {
+  if (!document.getElementById('labelProduct').value) { showNotif('Seleccione un producto primero', 'error'); return; }
+  window.print();
+}
+
+// ===================== PROGRAMACIÓN SEMANAL =====================
+const days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const areas = ['Recibo','Segregación','Desnaturalización','Llenado','Producción','Despacho'];
+
+function getWeekDates(offset) {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + offset*7);
+  return days.map((d,i) => { const dt = new Date(monday); dt.setDate(monday.getDate()+i); return dt; });
+}
+
+function renderWeekPlan() {
+  const dates = getWeekDates(DB.weekOffset);
+  document.getElementById('weekLabel').textContent = `Semana del ${dates[0].toLocaleDateString('es-CO')} al ${dates[5].toLocaleDateString('es-CO')}`;
+  let html = `<table style="width:100%; border-collapse:collapse; min-width:700px; font-size:12px">
+    <thead><tr><th style="padding:8px; background:var(--gray-100); border:1px solid var(--gray-200); width:90px">Área</th>`;
+  days.forEach((d,i) => {
+    html += `<th style="padding:8px; background:var(--gray-100); border:1px solid var(--gray-200); font-weight:600">
+      ${d}<br><span style="font-size:10px; font-weight:400; color:var(--gray-500)">${dates[i].toLocaleDateString('es-CO',{day:'2-digit',month:'short'})}</span>
+    </th>`;
+  });
+  html += '</tr></thead><tbody>';
+  areas.forEach(area => {
+    html += `<tr><td style="padding:8px; background:var(--gray-50); border:1px solid var(--gray-200); font-weight:600; font-size:11px; vertical-align:top">${area}</td>`;
+    days.forEach(day => {
+      const tareas = DB.tareas.filter(t=>t.dia===day && t.area===area);
+      const areaColors = {Recibo:'badge-blue', Segregación:'badge-amber', Desnaturalización:'badge-red', Llenado:'badge-green', Producción:'badge-blue', Despacho:'badge-gray'};
+      html += `<td style="padding:6px; border:1px solid var(--gray-200); vertical-align:top; min-height:60px">
+        ${tareas.map(t => {
+          const p = DB.products.find(x=>x.id==t.productoId);
+          return `<div style="background:var(--blue-light); border-radius:4px; padding:4px 6px; margin-bottom:4px; font-size:11px">
+            <div style="font-weight:600; color:var(--blue)">${t.operario}</div>
+            <div style="color:var(--gray-700)">${p?p.nombre.slice(0,20):'—'}</div>
+            <div style="color:var(--gray-500); font-size:10px">${t.desc.slice(0,30)}</div>
+            <button onclick="deleteTarea(${t.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:10px;padding:0">✕ Quitar</button>
+          </div>`;
+        }).join('')}
+        <button onclick="quickAddTarea('${day}','${area}')" style="font-size:10px; color:var(--gray-400); background:none; border:1px dashed var(--gray-300); width:100%; padding:4px; border-radius:4px; cursor:pointer">+ Agregar</button>
+      </td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('weekPlanGrid').innerHTML = html;
+}
+
+function quickAddTarea(day, area) {
+  document.getElementById('tareaDay').value = day;
+  document.getElementById('tareaArea').value = area;
+  openModal('modalTarea');
+}
+
+function saveTarea() {
+  DB.tareas.push({
+    id: DB.nextId.tarea++,
+    dia: document.getElementById('tareaDay').value,
+    area: document.getElementById('tareaArea').value,
+    operario: document.getElementById('tareaOperario').value,
+    productoId: parseInt(document.getElementById('tareaProducto').value)||null,
+    desc: document.getElementById('tareaDesc').value
+  });
+  saveData(); closeModal('modalTarea'); renderWeekPlan();
+  showNotif('📅 Tarea programada');
+}
+
+function deleteTarea(id) {
+  DB.tareas = DB.tareas.filter(t=>t.id!==id);
+  saveData(); renderWeekPlan();
+}
+
+function prevWeek() { DB.weekOffset--; renderWeekPlan(); }
+function nextWeek() { DB.weekOffset++; renderWeekPlan(); }
+
+function renderWeeklyStockRecommend() {
+  const sorted = [...DB.products].sort((a,b) => {
+    const pa = (parseFloat(a.stock)||0)/(parseFloat(a.min)||1);
+    const pb = (parseFloat(b.stock)||0)/(parseFloat(b.min)||1);
+    return pa - pb;
+  }).slice(0,6);
+  const div = document.getElementById('weeklyStockRecommend');
+  div.innerHTML = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px">` +
+    sorted.map(p => {
+      const stock = parseFloat(p.stock)||0;
+      const min = parseFloat(p.min)||1;
+      const pct = Math.min(100, (stock/min)*100);
+      const cls = pct < 50 ? 'danger' : pct < 100 ? 'warning' : '';
+      const priority = pct < 50 ? '🔴 Alta' : pct < 100 ? '🟡 Media' : '🟢 Normal';
+      return `<div style="padding:12px; background:var(--gray-50); border-radius:8px; border:1px solid var(--gray-200)">
+        <div style="font-size:12px; font-weight:600; margin-bottom:4px">${p.nombre.slice(0,24)}</div>
+        <div style="font-size:11px; color:var(--gray-600); margin-bottom:6px">Prioridad: ${priority}</div>
+        <div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct.toFixed(0)}%"></div></div>
+        <div style="font-size:11px; margin-top:4px; color:var(--gray-600)">${stock} / ${min} ${p.um}</div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+// ===================== REPORTES =====================
+function switchTab(el, tabId) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#view-reportes .card').forEach(c=>c.classList.add('hidden'));
+  document.getElementById(tabId).classList.remove('hidden');
+}
+
+function renderKardex() {
+  const sel = document.getElementById('kardexProduct');
+  if (!sel.options.length || sel.options[0].value === '') {
+    sel.innerHTML = '<option value="">— Todos los productos —</option>' + DB.products.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  }
+  loadKardex();
+}
+
+function loadKardex() {
+  const prodId = parseInt(document.getElementById('kardexProduct').value)||null;
+  const from = document.getElementById('kardexFrom').value;
+  const to = document.getElementById('kardexTo').value;
+  let rows = [];
+  DB.entradas.filter(e=>(!prodId||e.productoId==prodId)).forEach(e => {
+    rows.push({fecha:e.fecha, tipo:'Entrada', desc:`Entrada de ${e.area||'bodega'}. Lote: ${e.lote||'—'}`, entrada:e.cantidad, salida:'', productoId:e.productoId, usuario:e.usuario||'Sistema'});
+  });
+  DB.salidas.filter(s=>(!prodId||s.productoId==prodId)).forEach(s => {
+    rows.push({fecha:s.fecha, tipo:'Salida', desc:`Salida a ${s.destino||'destino'}. Rem: ${s.remision||'—'}`, entrada:'', salida:s.cantidad, productoId:s.productoId, usuario:s.usuario||'Sistema'});
+  });
+  rows.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  let saldo = 0;
+  const tbody = document.getElementById('kardexBody');
+  tbody.innerHTML = rows.map(r => {
+    if (r.entrada) saldo += parseFloat(r.entrada);
+    if (r.salida) saldo -= parseFloat(r.salida);
+    const p = DB.products.find(x=>x.id==r.productoId);
+    return `<tr>
+      <td>${formatDate(r.fecha)}</td>
+      <td><span class="badge ${r.tipo==='Entrada'?'badge-green':'badge-amber'}">${r.tipo}</span></td>
+      <td>${p?p.nombre:'—'}</td>
+      <td class="font-mono text-green">${r.entrada||'—'}</td>
+      <td class="font-mono text-red">${r.salida||'—'}</td>
+      <td class="font-mono font-bold">${saldo.toFixed(1)}</td>
+      <td style="font-size:12px">${r.usuario}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="text-center text-muted" style="padding:20px">Sin movimientos</td></tr>';
+}
+
+function renderReporteInventario() {
+  const tbody = document.getElementById('reporteInvBody');
+  tbody.innerHTML = DB.products.map(p => {
+    const stock = parseFloat(p.stock)||0;
+    const min = parseFloat(p.min)||0;
+    const ub = DB.ubicaciones.find(u=>u.productoId==p.id);
+    const badge = stock < min ? 'badge-red' : stock < min*1.5 ? 'badge-amber' : 'badge-green';
+    const txt = stock < min ? '⚠️ Crítico' : stock < min*1.5 ? '! Bajo' : '✓ OK';
+    return `<tr>
+      <td class="font-mono" style="font-size:11px">${p.ean}</td>
+      <td><strong>${p.nombre}</strong></td>
+      <td><span class="badge badge-blue" style="font-size:10px">${p.categoria}</span></td>
+      <td class="font-mono">${stock} ${p.um}</td>
+      <td class="font-mono">${min}</td>
+      <td style="font-size:12px">${ub?ub.bodega+' '+ub.rack:'Sin asignar'}</td>
+      <td class="font-mono">${(stock * 1).toFixed(1)} kg</td>
+      <td><span class="badge ${badge}">${txt}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderTrazabilidad(filter='') {
+  let rows = DB.entradas.map(e => {
+    const p = DB.products.find(x=>x.id==e.productoId);
+    const sal = DB.salidas.find(s=>s.productoId==e.productoId && new Date(s.fecha)>=new Date(e.fecha));
+    return {lote:e.lote||'—', ean:p?p.ean:'—', producto:p?p.nombre:'—', cliente:e.cliente||'—', entrada:formatDate(e.fecha), salida:sal?formatDate(sal.fecha):'Pendiente', area:e.area||'—', operario:e.usuario||'—'};
+  });
+  if (filter) rows = rows.filter(r=>r.lote.includes(filter)||r.ean.includes(filter)||r.producto.toLowerCase().includes(filter.toLowerCase()));
+  const tbody = document.getElementById('trazabilidadBody');
+  tbody.innerHTML = rows.map(r=>`<tr>
+    <td class="font-mono">${r.lote}</td><td class="font-mono" style="font-size:11px">${r.ean}</td>
+    <td>${r.producto}</td><td>${r.cliente}</td><td>${r.entrada}</td>
+    <td><span class="badge ${r.salida==='Pendiente'?'badge-amber':'badge-green'}">${r.salida}</span></td>
+    <td>${r.area}</td><td>${r.operario}</td>
+  </tr>`).join('') || '<tr><td colspan="8" class="text-center text-muted" style="padding:20px">Sin datos de trazabilidad</td></tr>';
+}
+
+function filterTrazabilidad(v) { renderTrazabilidad(v); }
+
+function renderClientes() {
+  const map = {};
+  DB.entradas.forEach(e=>{
+    if (!e.cliente) return;
+    if (!map[e.cliente]) map[e.cliente]={cliente:e.cliente, productos:new Set(), kgIn:0, kgOut:0, lastDate:''};
+    const p=DB.products.find(x=>x.id==e.productoId);
+    if(p)map[e.cliente].productos.add(p.nombre);
+    map[e.cliente].kgIn+=parseFloat(e.kg||0);
+    if(!map[e.cliente].lastDate||new Date(e.fecha)>new Date(map[e.cliente].lastDate))map[e.cliente].lastDate=e.fecha;
+  });
+  DB.salidas.forEach(s=>{
+    if(!s.cliente)return;
+    if(!map[s.cliente])map[s.cliente]={cliente:s.cliente,productos:new Set(),kgIn:0,kgOut:0,lastDate:''};
+    map[s.cliente].kgOut+=parseFloat(s.kg||0);
+  });
+  const rows=Object.values(map);
+  const tbody=document.getElementById('clientesBody');
+  tbody.innerHTML=rows.map(r=>`<tr>
+    <td><strong>${r.cliente}</strong></td>
+    <td style="font-size:12px">${[...r.productos].slice(0,3).join(', ') + (r.productos.size>3?'...':'')}</td>
+    <td class="font-mono">${r.kgIn.toFixed(1)} kg</td>
+    <td class="font-mono">${r.kgOut.toFixed(1)} kg</td>
+    <td style="font-size:12px">${r.lastDate?formatDate(r.lastDate):'—'}</td>
+  </tr>`).join('')||'<tr><td colspan="5" class="text-center text-muted" style="padding:20px">Sin datos de clientes</td></tr>';
+}
+
+function exportKardex() { exportExcel(); }
+
+// ===================== CONFIGURACIÓN =====================
+function renderUsers() {
+  const tbody = document.getElementById('usersBody');
+  tbody.innerHTML = DB.users.map(u=>`<tr>
+    <td class="font-mono">${u.login}</td>
+    <td>${u.nombre}</td>
+    <td><span class="badge badge-blue">${u.area}</span></td>
+    <td><span class="badge ${u.rol==='Administrador'?'badge-red':u.rol==='Supervisor'?'badge-amber':'badge-gray'}">${u.rol}</span></td>
+    <td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteUser(${u.id})">🗑</button></td>
+  </tr>`).join('');
+}
+
+function saveUser() {
+  const login = document.getElementById('userLogin').value.trim();
+  if (!login) { showNotif('Ingrese el usuario', 'error'); return; }
+  if (DB.users.find(u=>u.login===login)) { showNotif('El usuario ya existe', 'error'); return; }
+  DB.users.push({id:DB.nextId.user++, login, pass:document.getElementById('userPass').value, nombre:document.getElementById('userNombre').value, area:document.getElementById('userArea').value, rol:document.getElementById('userRol').value});
+  saveData(); closeModal('modalUser'); renderUsers();
+  showNotif('✅ Usuario creado');
+}
+
+function deleteUser(id) {
+  if (id===1){showNotif('No se puede eliminar el administrador','error');return;}
+  if (!confirm('¿Eliminar usuario?')) return;
+  DB.users=DB.users.filter(u=>u.id!==id);
+  saveData(); renderUsers();
+}
+
+function renderBodegas() {
+  const div=document.getElementById('bodegaList');
+  div.innerHTML=DB.bodegas.map(b=>`<div style="display:flex; align-items:center; justify-content:space-between; padding:8px; background:var(--gray-50); border-radius:6px; margin-bottom:6px; border:1px solid var(--gray-200)">
+    <span style="font-size:13px; font-weight:600">🏭 ${b}</span>
+    <span style="font-size:11px; color:var(--gray-500)">${DB.ubicaciones.filter(u=>u.bodega===b).length} ubicaciones</span>
+  </div>`).join('');
+}
+
+function saveBodega() {
+  const nombre=document.getElementById('bodegaNombre').value.trim();
+  if(!nombre){showNotif('Ingrese el nombre de la bodega','error');return;}
+  DB.bodegas.push(nombre);
+  saveData(); closeModal('modalBodega'); renderBodegas();
+  showNotif('🏭 Bodega creada: '+nombre);
+}
+
+// ===================== UTILITIES =====================
+function generateEAN13() {
+  const prefix='770123456';
+  const mid=String(DB.nextId.product).padStart(3,'0');
+  const body=prefix+mid;
+  let sum=0;
+  for(let i=0;i<12;i++) sum+=parseInt(body[i])*(i%2===0?1:3);
+  const check=(10-(sum%10))%10;
+  return body+check;
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const dt=new Date(d);
+  if (isNaN(dt)) return '—';
+  return dt.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function populateSelects() {
+  const opts='<option value="">— Seleccione —</option>'+DB.products.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  ['entradaProduct','salidaProduct','ubicProducto','tareaProducto','labelProduct'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.innerHTML=opts;
+  });
+  const kardexSel=document.getElementById('kardexProduct');
+  if(kardexSel) kardexSel.innerHTML='<option value="">— Todos —</option>'+DB.products.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  const prodEAN=document.getElementById('prodEAN');
+  if(prodEAN) prodEAN.value='Se generará automáticamente (EAN-13)';
+}
+
+function showNotif(msg, type='success') {
+  const bar=document.getElementById('notifications');
+  const div=document.createElement('div');
+  div.className='notification '+(type==='error'?'error':type==='warning'?'warning':'');
+  div.textContent=msg;
+  bar.appendChild(div);
+  setTimeout(()=>div.remove(), 4000);
+}
+
+function backupData() {
+  saveData();
+  const data=JSON.stringify(DB, null, 2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='rva_inventario_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  document.getElementById('lastBackup').textContent=new Date().toLocaleString('es-CO');
+  showNotif('☁️ Respaldo generado y descargado');
+}
+
+function restoreData() {
+  const input=document.createElement('input');
+  input.type='file'; input.accept='.json';
+  input.onchange=e=>{
+    const file=e.target.files[0];
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const parsed=JSON.parse(ev.target.result);
+        Object.assign(DB,parsed);
+        saveData(); renderAll(); populateSelects();
+        showNotif('✅ Datos restaurados correctamente');
+      } catch {showNotif('Error al restaurar','error');}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function exportExcel() {
+  if (typeof XLSX === 'undefined') { showNotif('Librería Excel no disponible','warning'); exportCSV(); return; }
+  const wb=XLSX.utils.book_new();
+  // Productos
+  const prodData=[['Código EAN','Nombre','Categoría','Stock','UM','Mínimo','Cliente'],...DB.products.map(p=>[p.ean,p.nombre,p.categoria,p.stock,p.um,p.min,p.cliente])];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(prodData), 'Productos');
+  // Entradas
+  const entData=[['Fecha','EAN','Producto','Cliente','Cantidad','UM','Kg','Área','Bodega','Rack','Lote'],...DB.entradas.map(e=>{const p=DB.products.find(x=>x.id==e.productoId);return[formatDate(e.fecha),p?p.ean:'',p?p.nombre:'',e.cliente,e.cantidad,e.um,e.kg,e.area,e.bodega,e.rack,e.lote];})];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(entData), 'Entradas');
+  // Salidas
+  const salData=[['Fecha','Producto','Cliente','Cantidad','Kg','Destino','Responsable'],...DB.salidas.map(s=>{const p=DB.products.find(x=>x.id==s.productoId);return[formatDate(s.fecha),p?p.nombre:'',s.cliente,s.cantidad,s.kg,s.destino,s.responsable];})];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(salData), 'Salidas');
+  // Ubicaciones
+  const ubData=[['Producto','Bodega','Rack','Nivel','Cantidad','Fecha'],...DB.ubicaciones.map(u=>{const p=DB.products.find(x=>x.id==u.productoId);return[p?p.nombre:'',u.bodega,u.rack,u.nivel,u.cantidad,formatDate(u.fecha)];})];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ubData), 'Ubicaciones');
+  XLSX.writeFile(wb, 'RVA_Inventario_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showNotif('📊 Archivo Excel exportado');
+}
+
+function exportCSV() {
+  const rows=[['Código EAN','Nombre','Categoría','Stock','UM','Mínimo','Cliente'],...DB.products.map(p=>[p.ean,p.nombre,p.categoria,p.stock,p.um,p.min,p.cliente])];
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='RVA_Inventario_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  showNotif('📄 CSV exportado');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+  overlay.addEventListener('click', e=>{
+    if(e.target===overlay) overlay.classList.remove('open');
+  });
+});
+
+// ===================== INIT =====================
+loadData();
+// Add some sample data if no entradas
+if (DB.entradas.length === 0) {
+  const now = new Date();
+  DB.entradas.push(
+    {id:1, fecha:new Date(now.getTime()-86400000*2).toISOString(), productoId:1, cliente:'Unilever Colombia', cantidad:500, um:'kg', kg:500, area:'Recibo', bodega:'Bodega 1', rack:'Rack 7', lote:'LOT-2024-001', pedido:'PED-001', obs:'Buen estado', usuario:'Juan García'},
+    {id:2, fecha:new Date(now.getTime()-86400000).toISOString(), productoId:4, cliente:'Carvajal Empaques', cantidad:1200, um:'kg', kg:1200, area:'Producción', bodega:'Bodega 3', rack:'Rack 1', lote:'LOT-2024-002', pedido:'PED-002', obs:'', usuario:'María López'},
+    {id:3, fecha:now.toISOString(), productoId:2, cliente:'Colombina SA', cantidad:320, um:'lt', kg:320, area:'Recibo', bodega:'Bodega 2', rack:'Rack 3', lote:'LOT-2024-003', pedido:'PED-003', obs:'', usuario:'Carlos Ruiz'}
+  );
+  DB.nextId.entrada = 4;
+  DB.salidas.push(
+    {id:1, fecha:new Date(now.getTime()-86400000).toISOString(), productoId:3, cliente:'Canal Institucional', cantidad:50, kg:50, destino:'Despacho externo', responsable:'Ana Martínez', remision:'REM-001', usuario:'Ana Martínez'},
+  );
+  DB.nextId.salida = 2;
+  saveData();
+}
+</script>
+</body>
+</html>
